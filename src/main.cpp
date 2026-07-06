@@ -9,9 +9,9 @@ struct DummyAsset {
 };
 
 int main() {
-    JGL::TaskScheduler::Init();
+    JLib::TaskScheduler::Init();
 
-    JGL::AssetManager<DummyAsset> manager;
+    JLib::AssetManager<DummyAsset> manager;
 
     // Synchronous load + cache hit.
     auto h1 = manager.Load("thing", [](DummyAsset& a) { a.value = 42; return true; });
@@ -30,9 +30,9 @@ int main() {
         return true;
         });
     std::cout << "async load state right away: "
-        << (manager.GetLoadState(hAsync) == JGL::AssetManager<DummyAsset>::LoadState::Ready ? "Ready (unexpected)" : "Loading (expected)")
+        << (manager.GetLoadState(hAsync) == JLib::AssetManager<DummyAsset>::LoadState::Ready ? "Ready (unexpected)" : "Loading (expected)")
         << "\n";
-    while (manager.GetLoadState(hAsync) == JGL::AssetManager<DummyAsset>::LoadState::Loading) {
+    while (manager.GetLoadState(hAsync) == JLib::AssetManager<DummyAsset>::LoadState::Loading) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     std::cout << "async load value: " << manager.Resolve(hAsync).value << " (expect 7)\n";
@@ -47,6 +47,6 @@ int main() {
         std::cout << "Resolve(unloaded handle) correctly threw\n";
     }
 
-    JGL::TaskScheduler::Instance().Join();
+    JLib::TaskScheduler::Instance().Join();
     return 0;
 }

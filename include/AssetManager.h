@@ -8,7 +8,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace JGL {
+namespace JLib {
 
 // Generational handle to a slot in an AssetManager<T>. A handle from a slot that was Unload()'d
 // can never accidentally validate against a different asset that later reused the same index
@@ -29,7 +29,7 @@ struct AssetHandle {
 // loader uses miniaudio's ma_decoder; a future model/level loader would supply its own). This
 // class only owns the two things that are genuinely the same problem regardless of asset type:
 // generational-handle bookkeeping (so a stale handle can never resolve to the wrong asset) and,
-// for LoadAsync, dispatching the loader onto a JGL::TaskScheduler worker so the calling thread
+// for LoadAsync, dispatching the loader onto a JLib::TaskScheduler worker so the calling thread
 // never blocks on file I/O/decoding.
 //
 // Thread safety: every public method is safe to call from any thread. The loader function itself
@@ -70,9 +70,9 @@ public:
     }
 
     // Asynchronous load (or cache hit by key) -- returns a handle immediately; loaderFn runs on
-    // a JGL::TaskScheduler worker. Check LoadState(handle) before Resolve()'ing -- it starts as
+    // a JLib::TaskScheduler worker. Check LoadState(handle) before Resolve()'ing -- it starts as
     // Loading and transitions to Ready/Failed once the worker finishes. Requires
-    // JGL::TaskScheduler::Init() to have already been called.
+    // JLib::TaskScheduler::Init() to have already been called.
     AssetHandle<T> LoadAsync(const std::string& key, Loader loaderFn) {
         std::unique_lock<std::mutex> lock(m_Mutex);
         AssetHandle<T> cached;
@@ -85,7 +85,7 @@ public:
         // synchronous, blocking work (file I/O/decode) that never calls WaitOnEvent*/suspends --
         // exactly the fastJob contract, so it runs inline on whichever worker claims it with no
         // fiber overhead.
-        JGL::TaskScheduler::Instance().Push([this, handle, key, loaderFn]() {
+        JLib::TaskScheduler::Instance().Push([this, handle, key, loaderFn]() {
             Slot& slot = m_Slots[handle.index]; // stable address -- see AllocateSlotLocked's comment
             bool ok = loaderFn(slot.data);
             std::lock_guard<std::mutex> lock2(m_Mutex);
@@ -236,4 +236,4 @@ private:
     std::unordered_map<std::string, AssetHandle<T>> m_KeyToHandle;
 };
 
-} // namespace JGL
+} // namespace JLib
